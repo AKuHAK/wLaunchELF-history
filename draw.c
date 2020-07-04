@@ -1,107 +1,139 @@
 #include "launchelf.h"
-#include "font5200.c"
+//#include "font5200.c"
 
 itoGsEnv screen_env;
 
-// ELISA100.FNTに存在しない文字
-const uint16 font404[] = {
-	0xA2AF, 11,
-	0xA2C2, 8,
-	0xA2D1, 11,
-	0xA2EB, 7,
-	0xA2FA, 4,
-	0xA3A1, 15,
-	0xA3BA, 7,
-	0xA3DB, 6,
-	0xA3FB, 4,
-	0xA4F4, 11,
-	0xA5F7, 8,
-	0xA6B9, 8,
-	0xA6D9, 38,
-	0xA7C2, 15,
-	0xA7F2, 13,
-	0xA8C1, 720,
-	0xCFD4, 43,
-	0xF4A5, 1030,
-	0,0
+int initbiosfont=0;
+char *biosfont=NULL;
+
+unsigned short font_sjis_table[] = {
+0x8140,0x817e,
+0x8180,0x81ac,
+0x81b8,0x81bf,
+0x81c8,0x81ce,
+0x81da,0x81e8,
+0x81f0,0x81f7,
+0x81fc,0x81fc,
+0x824f,0x8258,
+0x8260,0x8279,
+0x8281,0x829a,
+0x829f,0x82f1,
+0x8340,0x837e,
+0x8380,0x8396,
+0x839f,0x83b6,
+0x83bf,0x83d6,
+0x8440,0x8460,
+0x8470,0x847e,
+0x8480,0x8491,
+0x849f,0x84be,
+0x889f,0x88fc,
+0x8940,0x897e,
+0x8980,0x89fc,
+0x8a40,0x8a7e,
+0x8a80,0x8afc,
+0x8b40,0x8b7e,
+0x8b80,0x8bfc,
+0x8c40,0x8c7e,
+0x8c80,0x8cfc,
+0x8d40,0x8d7e,
+0x8d80,0x8dfc,
+0x8e40,0x8e7e,
+0x8e80,0x8efc,
+0x8f40,0x8f7e,
+0x8f80,0x8ffc,
+0x9040,0x907e,
+0x9080,0x90fc,
+0x9140,0x917e,
+0x9180,0x91fc,
+0x9240,0x927e,
+0x9280,0x92fc,
+0x9340,0x937e,
+0x9380,0x93fc,
+0x9440,0x947e,
+0x9480,0x94fc,
+0x9540,0x957e,
+0x9580,0x95fc,
+0x9640,0x967e,
+0x9680,0x96fc,
+0x9740,0x977e,
+0x9780,0x97fc,
+0x9840,0x9872
 };
 
-// ASCIIとSJISの変換用配列
-const unsigned char sjis_lookup_81[256] = {
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0x00
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0x10
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0x20
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0x30
-  ' ', ',', '.', ',', '.', 0xFF,':', ';', '?', '!', 0xFF,0xFF,'ｴ', '`', 0xFF,'^',   // 0x40
-  0xFF,'_', 0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,'0', 0xFF,'-', '-', 0xFF,0xFF,  // 0x50
-  0xFF,0xFF,0xFF,0xFF,0xFF,'\'','\'','"', '"', '(', ')', 0xFF,0xFF,'[', ']', '{',   // 0x60
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,'+', '-', 0xFF,'*', 0xFF,  // 0x70
-  '/', '=', 0xFF,'<', '>', 0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,'ｰ', 0xFF,0xFF,'ｰ', 0xFF,  // 0x80
-  '$', 0xFF,0xFF,'%', '#', '&', '*', '@', 0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0x90
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0xA0
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0xB0
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,'&', '|', '!', 0xFF,0xFF,0xFF,0xFF,0xFF,  // 0xC0
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0xD0
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0xE0
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0xF0
-};
-const unsigned char sjis_lookup_82[256] = {
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0x00
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0x10
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0x20
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0x30
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,'0',   // 0x40
-  '1', '2', '3', '4', '5', '6', '7', '8', '9', 0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0x50
-  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',   // 0x60
-  'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0x70
-  0xFF,'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',   // 0x80
-  'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 0xFF,0xFF,0xFF,0xFF,0xFF,  // 0x90
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0xA0
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0xB0
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0xC0
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0xD0
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0xE0
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0xF0
-};
+//------------------------------------------------------------
+int InitBIOSFont(void)
+{
+	int fd=0;
+	size_t size;
+	int ret=0;
 
+	//すでにロードしている
+	if(initbiosfont) return 0;
+
+	//フォントファイルオープン
+	fd = fioOpen("rom0:KROM", O_RDONLY);
+	if(fd<0){
+		ret=-1;
+		goto error;
+	}
+
+	//サイズを調べる
+	size = fioLseek(fd,0,SEEK_END);
+	fioLseek(fd,0,SEEK_SET);	//シークを0に戻す
+
+	//メモリを確保
+	biosfont = (char*)malloc(size);
+	if(biosfont==NULL){
+		ret=-2;
+		goto error;
+	}
+	
+	//メモリに読み込む
+	fioRead(fd, biosfont, (size_t)size);
+
+	//フォントロード成功
+	initbiosfont=1;
+
+error:
+	if(fd>0) fioClose(fd);
+	return ret;
+}
+
+//------------------------------------------------------------
+void FreeBIOSFont(void)
+{
+	free(biosfont);
+	initbiosfont=0;
+}
 
 ////////////////////////////////////////////////////////////////////////
 // 画面表示のテンプレート
 void setScrTmp(const char *msg0, const char *msg1)
 {
-	int x, y;
-	
 	// バージョン表記
-	x = SCREEN_MARGIN;
-	y = SCREEN_MARGIN;
-	printXY(" ■ LaunchELF v3.41 ■",
-		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y/2, setting->color[1], TRUE);
-	y += FONT_HEIGHT+4;
+	printXY("■ LbF v0.30 ■",
+		FONT_WIDTH*47, SCREEN_MARGIN, setting->color[3], TRUE);
 	
 	// メッセージ
-	printXY(msg0, x, y/2, setting->color[2], TRUE);
-	y += FONT_HEIGHT;
+	printXY(msg0, FONT_WIDTH*2, SCREEN_MARGIN+FONT_HEIGHT*1, setting->color[3], TRUE);
 	
 	// 枠
-	drawFrame(SCREEN_MARGIN, y/2,
-		SCREEN_WIDTH-SCREEN_MARGIN-1,
-		(SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT-2)/2,
+	drawFrame(FONT_WIDTH*1.5, SCREEN_MARGIN+FONT_HEIGHT*2.5,
+		FONT_WIDTH*62.5, SCREEN_MARGIN+FONT_HEIGHT*19.5,
 		setting->color[1]);
 	
 	// 操作説明
-	x = SCREEN_MARGIN;
-	y = SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT;
-	printXY(msg1, x, y/2, setting->color[2], TRUE);
+	printXY(msg1, FONT_WIDTH*2, SCREEN_MARGIN+FONT_HEIGHT*20, setting->color[3], TRUE);
 }
 
 ////////////////////////////////////////////////////////////////////////
 // メッセージ描画
 void drawMsg(const char *msg)
 {
-	itoSprite(setting->color[0], 0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-		SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2, 0);
-	printXY(msg, SCREEN_MARGIN, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-		setting->color[2], TRUE);
+	itoSprite(setting->color[0], 0, SCREEN_MARGIN+FONT_HEIGHT,
+		SCREEN_WIDTH, SCREEN_MARGIN+FONT_HEIGHT*2, 0);
+	printXY(msg, SCREEN_MARGIN, SCREEN_MARGIN+FONT_HEIGHT,
+		setting->color[3], TRUE);
 	drawScr();
 }
 
@@ -112,8 +144,8 @@ void setupito(void)
 	itoInit();
 
 	// screen resolution
-	screen_env.screen.width		= 512;
-	screen_env.screen.height	= 480;
+	screen_env.screen.width		= 640;
+	screen_env.screen.height	= 448;
 	screen_env.screen.psm		= ITO_RGBA32;
 
 	// These setting work best with my tv, experiment for youself
@@ -124,23 +156,23 @@ void setupito(void)
 	screen_env.framebuffer1.y	= 0;
 	
 	screen_env.framebuffer2.x	= 0;
-	screen_env.framebuffer2.y	= 480;
+	screen_env.framebuffer2.y	= 448;
 
 	// zbuffer
 	screen_env.zbuffer.x		= 0;
-	screen_env.zbuffer.y		= 480*2;
+	screen_env.zbuffer.y		= 448*2;
 	screen_env.zbuffer.psm		= ITO_ZBUF32;
 	
 	// scissor 
 	screen_env.scissor_x1		= 0;
 	screen_env.scissor_y1		= 0;
-	screen_env.scissor_x2		= 512;
-	screen_env.scissor_y2		= 480;
+	screen_env.scissor_x2		= 640;
+	screen_env.scissor_y2		= 448;
 	
 	// misc
 	screen_env.dither			= TRUE;
-	screen_env.interlace		= setting->interlace;
-	screen_env.ffmode			= ITO_FRAME;
+	screen_env.interlace		= ITO_INTERLACE;	//setting->interlace;
+	screen_env.ffmode			= ITO_FIELD;
 	screen_env.vmode			= ITO_VMODE_AUTO;
 	
 	itoGsEnvSubmit(&screen_env);
@@ -168,51 +200,161 @@ void drawScr(void)
 // 枠の描画
 void drawFrame(int x1, int y1, int x2, int y2, uint64 color)
 {
+	//上の横線
 	itoLine(color, x1, y1, 0, color, x2, y1, 0);
-	
-	itoLine(color, x2, y1, 0, color, x2, y2, 0);
-	itoLine(color, x2-1, y1, 0, color, x2-1, y2, 0);
-	
+	//右の縦線
+	itoLine(color, x2, y1, 0, color, x2, y2, 0);	
+	//下の横線
 	itoLine(color, x2, y2, 0, color, x1, y2, 0);
-	
+	//左の縦線
 	itoLine(color, x1, y2, 0, color, x1, y1, 0);
-	itoLine(color, x1+1, y2, 0, color, x1+1, y1, 0);
+
+	//FLICKER CONTROL: ON
+	if(setting->interlace){
+		itoSetAlphaBlending(
+			ITO_ALPHA_COLOR_SRC, // A = COLOR SOURCE
+			ITO_ALPHA_COLOR_DST, // B = COLOR DEST
+			ITO_ALPHA_VALUE_SRC, // C = ALPHA VALUE SOURCE
+			ITO_ALPHA_COLOR_DST, // C = COLOR DEST
+			0x80);				 // Fixed Value
+		itoPrimAlphaBlending( TRUE );
+		color=color&0xFFFFFF;
+		color=color|0x80000000;
+		//上の横線
+		itoLine(color, x1, y1+1, 0, color, x2, y1+1, 0);
+		//下の横線
+		itoLine(color, x2, y2+1, 0, color, x1, y2+1, 0);
+		itoPrimAlphaBlending(FALSE);
+	}
+
 }
 
 ////////////////////////////////////////////////////////////////////////
-// draw a char using the system font (8x8)
-void drawChar(unsigned char c, int x, int y, uint64 colour)
+//半角文字の表示
+void drawChar(unsigned char c, int x, int y, uint64 color)
 {
 	unsigned int i, j;
 	unsigned char cc;
+	unsigned char *pc;
 
-	for(i=0; i<8; i++)
-	{
-		cc = font5200[(c-32)*8+i];
-		for(j=0; j<8; j++)
-		{
-			if(cc & 0x80) itoPoint(colour, x+j, y+i, 0);
+	//初期化していないか、初期化失敗している
+	if(!initbiosfont) return;
+
+	//半角スペースのときは、何もしない
+	if(c==' ') return;
+
+	pc = &biosfont[104670+(c-33)*15];
+	cc = *pc;
+
+	for(i=0; i<16; i++){
+		for(j=0; j<8; j++){
+			if(cc & 0x80){
+				itoPoint(color, x+j, y+i, 0);
+				itoPoint(color, x+j+1, y+i, 0);	//太字にする
+				//FLICKER CONTROL: ON
+				if(setting->interlace){
+					itoSetAlphaBlending(
+						ITO_ALPHA_COLOR_SRC, // A = COLOR SOURCE
+						ITO_ALPHA_COLOR_DST, // B = COLOR DEST
+						ITO_ALPHA_VALUE_SRC, // C = ALPHA VALUE SOURCE
+						ITO_ALPHA_COLOR_DST, // C = COLOR DEST
+						0x80);				 // Fixed Value
+					itoPrimAlphaBlending( TRUE );
+					//透明度
+					color=color&0xFFFFFF;
+					color=color|0x80000000;
+					itoPoint(color, x+j, y+i+1, 0);
+					itoPrimAlphaBlending(FALSE);	//元に戻す
+				}
+			}
 			cc = cc << 1;
 		}
+		cc = *pc++;
 	}
 }
 
 ////////////////////////////////////////////////////////////////////////
-// draw a char using the ELISA font (8x8)
-void drawChar2(int32 n, int x, int y, uint64 colour)
+//全角文字の表示
+void drawChar_SJIS(unsigned int c, int x, int y, uint64 color)
 {
-	unsigned int i, j;
-	uint8 b;
-	
-	for(i=0; i<8; i++)
-	{
-		b = elisaFnt[n+i];
-		for(j=0; j<8; j++)
-		{
-			if(b & 0x80) {
-				itoPoint(colour, x+j, y+i, 0);
+	int i, j, a;
+	int ret, sum;
+	unsigned char cc;
+	unsigned char *pc;
+
+	//初期化していないか、初期化失敗している
+	if(!initbiosfont) return;
+
+	//何番目のブロックにあるか調べる
+	ret=-1;
+	for(i=0;i<51;i++){
+		if((font_sjis_table[i*2] <= c) && (font_sjis_table[i*2+1] >= c)){
+			ret=i;
+			break;
+		}
+	}
+	//見つからないときは、なにもしない
+	if (ret==-1) return;
+
+	//アドレス算出
+	sum = 0;
+	for(i=0;i<ret;i++){
+		sum += font_sjis_table[i*2+1] - font_sjis_table[i*2];
+	}
+
+	//
+	a = (sum + ret + ( c - font_sjis_table[ret*2] ) ) * 30;
+	pc = &biosfont[a];                                
+
+	//
+	for(i=0; i<15; i++) {
+		//左半分
+		cc = *pc++;
+		for(j=0; j<8; j++) {
+			if(cc & 0x80){
+				itoPoint(color, x+j, y+i, 0);
+				itoPoint(color, x+j+1, y+i, 0);	//太字にする
+				//FLICKER CONTROL: ON
+				if(setting->interlace){
+					itoSetAlphaBlending(
+						ITO_ALPHA_COLOR_SRC, // A = COLOR SOURCE
+						ITO_ALPHA_COLOR_DST, // B = COLOR DEST
+						ITO_ALPHA_VALUE_SRC, // C = ALPHA VALUE SOURCE
+						ITO_ALPHA_COLOR_DST, // C = COLOR DEST
+						0x80);				 // Fixed Value
+					itoPrimAlphaBlending( TRUE );
+					//透明度
+					color=color&0xFFFFFF;
+					color=color|0x80000000;
+					itoPoint(color, x+j, y+i+1, 0);
+					itoPrimAlphaBlending(FALSE);	//元に戻す
+				}
 			}
-			b = b << 1;
+			cc = cc << 1;
+		}
+		//右半分
+		cc = *pc++;
+		for(j=0; j<8; j++) {
+			if(cc & 0x80){
+				itoPoint(color, x+8+j, y+i, 0);
+				itoPoint(color, x+8+j+1, y+i, 0);	//太字にする
+				//FLICKER CONTROL: ON
+				if(setting->interlace){
+					itoSetAlphaBlending(
+						ITO_ALPHA_COLOR_SRC, // A = COLOR SOURCE
+						ITO_ALPHA_COLOR_DST, // B = COLOR DEST
+						ITO_ALPHA_VALUE_SRC, // C = ALPHA VALUE SOURCE
+						ITO_ALPHA_COLOR_DST, // C = COLOR DEST
+						0x80);				 // Fixed Value
+					itoPrimAlphaBlending( TRUE );
+					//透明度
+					color=color&0xFFFFFF;
+					color=color|0x80000000;
+					itoPoint(color, x+8+j, y+i+1, 0);
+					itoPrimAlphaBlending(FALSE);	//元に戻す
+				}
+			}
+			cc = cc << 1;
 		}
 	}
 }
@@ -221,120 +363,29 @@ void drawChar2(int32 n, int x, int y, uint64 colour)
 // draw a string of characters
 int printXY(const unsigned char *s, int x, int y, uint64 colour, int draw)
 {
-	int32 n;
-	unsigned char ascii;
 	uint16 code;
-	int i, j, tmp;
-	
+	int i;
+
 	i=0;
 	while(s[i]){
-		if(s[i] & 0x80) {
-			// SJISコードの生成
+		if (( s[i]>=0x81 && s[i]<=0x9f ) || ( s[i]>=0xe0 && s[i]<=0xff )){
 			code = s[i++];
 			code = (code<<8) + s[i++];
-			
-			switch(code){
-			// ○
-			case 0x819B:
-				if(draw){
-					drawChar(160, x, y, colour);
-					drawChar(161, x+8, y, colour);
-				}
-				x+=16;
-				break;
-			// ×
-			case 0x817E:
-				if(draw){
-					drawChar(162, x, y, colour);
-					drawChar(163, x+8, y, colour);
-				}
-				x+=16;
-				break;
-			// □
-			case 0x81A0:
-				if(draw){
-					drawChar(164, x, y, colour);
-					drawChar(165, x+8, y, colour);
-				}
-				x+=16;
-				break;
-			// △
-			case 0x81A2:
-				if(draw){
-					drawChar(166, x, y, colour);
-					drawChar(167, x+8, y, colour);
-				}
-				x+=16;
-				break;
-			// ■
-			case 0x81A1:
-				if(draw){
-					drawChar(168, x, y, colour);
-					drawChar(169, x+8, y, colour);
-				}
-				x+=16;
-				break;
-			default:
-				if(elisaFnt!=NULL){
-					tmp=y;
-					if(code<=0x829A) tmp++;
-					// SJISからEUCに変換
-					if(code >= 0xE000) code-=0x4000;
-					code = ((((code>>8)&0xFF)-0x81)<<9) + (code&0x00FF);
-					if((code & 0x00FF) >= 0x80) code--;
-					if((code & 0x00FF) >= 0x9E) code+=0x62;
-					else code-=0x40;
-					code += 0x2121 + 0x8080;
-					
-					// EUCから恵梨沙フォントの番号を生成
-					n = (((code>>8)&0xFF)-0xA1)*(0xFF-0xA1)
-						+ (code&0xFF)-0xA1;
-					j=0;
-					while(font404[j]) {
-						if(code >= font404[j]) {
-							if(code <= font404[j]+font404[j+1]-1) {
-								n = -1;
-								break;
-							} else {
-								n-=font404[j+1];
-							}
-						}
-						j+=2;
-					}
-					n*=8;
-					
-					if(n>=0 && n<=55008) {
-						if(draw) drawChar2(n, x, tmp, colour);
-						x+=9;
-					}else{
-						if(draw) drawChar('_', x, y, colour);
-						x+=8;
-					}
-				}else{
-					ascii=0xFF;
-					if(code>>8==0x81)
-						ascii = sjis_lookup_81[code & 0x00FF];
-					else if(code>>8==0x82)
-						ascii = sjis_lookup_82[code & 0x00FF];
-					if(ascii!=0xFF){
-						if(draw) drawChar(ascii, x, y, colour);
-					}else{
-						if(draw) drawChar('_', x, y, colour);
-					}
-					x+=8;
-				}
-				break;
-			}
-		}else{
+			drawChar_SJIS(code, x, y, colour);
+			x += FONT_WIDTH*2;
+		}           
+		else{
 			if(draw) drawChar(s[i], x, y, colour);
 			i++;
-			x += 8;
+			x += FONT_WIDTH;
 		}
+/*
 		if(x > SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH){
 			//x=16; y=y+8;
 			return x;
 		}
+*/
 	}
-	
+
 	return x;
 }

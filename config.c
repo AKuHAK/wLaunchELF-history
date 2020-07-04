@@ -4,21 +4,22 @@ enum
 {
 	DEF_TIMEOUT = 10,
 	DEF_FILENAME = TRUE,
-	DEF_COLOR1 = ITO_RGBA(30,30,50,0),
-	DEF_COLOR2 = ITO_RGBA(85,85,95,0),
-	DEF_COLOR3 = ITO_RGBA(160,160,160,0),
-	DEF_COLOR4 = ITO_RGBA(255,255,255,0),
-	DEF_SCREEN_X = 128,
-	DEF_SCREEN_Y = 30,
+	DEF_COLOR1 = ITO_RGBA(30,30,50,0),		//背景
+	DEF_COLOR2 = ITO_RGBA(64,64,80,0),		//枠
+	DEF_COLOR3 = ITO_RGBA(192,192,192,0),	//強調の文字色
+	DEF_COLOR4 = ITO_RGBA(128,128,128,0),	//通常の文字色
+	DEF_SCREEN_X = 160,
+	DEF_SCREEN_Y = 55,
 	DEF_DISCCONTROL = TRUE,
-	DEF_INTERLACE = FALSE,
+	DEF_INTERLACE = TRUE,	//フリッカーコントロール
 	
 	DEFAULT=0,
-	TIMEOUT=12,
+	TIMEOUT=0,
 	DISCCONTROL,
 	FILENAME,
 	SCREEN,
-	OK,
+	COLOR1=0,
+	OK=14,
 	CANCEL
 };
 
@@ -77,7 +78,7 @@ void saveConfig(char *mainMsg)
 	}
 	// LaunchELFのディレクトリにCNFがあったらLaunchELFのディレクトリにセーブ
 	strcpy(c, LaunchElfDir);
-	strcat(c, "LAUNCHELF.CNF");
+	strcat(c, "LbF.CNF");
 	if((fd=fioOpen(c, O_RDONLY)) >= 0)
 		fioClose(fd);
 	else{
@@ -88,11 +89,11 @@ void saveConfig(char *mainMsg)
 		// SYS-CONFがあったらSYS-CONFにセーブ
 		if((fd=fioDopen(c)) >= 0){
 			fioDclose(fd);
-			strcat(c, "/LAUNCHELF.CNF");
+			strcat(c, "/LbF.CNF");
 		// SYS-CONFがなかったらLaunchELFのディレクトリにセーブ
 		}else{
 			strcpy(c, LaunchElfDir);
-			strcat(c, "LAUNCHELF.CNF");
+			strcat(c, "LbF.CNF");
 		}
 	}
 	strcpy(mainMsg,"Save Failed");
@@ -116,7 +117,7 @@ void loadConfig(char *mainMsg)
 	
 	setting = (SETTING*)malloc(sizeof(SETTING));
 	// LaunchELFが実行されたパスから設定ファイルを開く
-	sprintf(path, "%s%s", LaunchElfDir, "LAUNCHELF.CNF");
+	sprintf(path, "%s%s", LaunchElfDir, "LbF.CNF");
 	if(!strncmp(path, "cdrom", 5)) strcat(path, ";1");
 	fd = fioOpen(path, O_RDONLY);
 	// 開けなかったら、SYS-CONFの設定ファイルを開く
@@ -126,7 +127,7 @@ void loadConfig(char *mainMsg)
 		else
 			mcport = CheckMC();
 		if(mcport==1 || mcport==0){
-			sprintf(path, "mc%d:/SYS-CONF/LAUNCHELF.CNF", mcport);
+			sprintf(path, "mc%d:/SYS-CONF/LbF.CNF", mcport);
 			fd = fioOpen(path, O_RDONLY);
 		}
 	}
@@ -255,201 +256,16 @@ void loadConfig(char *mainMsg)
 }
 
 ////////////////////////////////////////////////////////////////////////
-// スクリーンセッティング画面
-void setColor(void)
-{
-	int i;
-	int s;
-	int x, y;
-	uint64 rgb[4][3];
-	char c[MAX_PATH];
-	
-	for(i=0; i<4; i++) {
-		rgb[i][0] = setting->color[i] & 0xFF;
-		rgb[i][1] = setting->color[i] >> 8 & 0xFF;
-		rgb[i][2] = setting->color[i] >> 16 & 0xFF;
-	}
-	
-	s=0;
-	while(1)
-	{
-		// 操作
-		waitPadReady(0, 0);
-		if(readpad())
-		{
-			if(new_pad & PAD_UP)
-			{
-				if(s!=0)
-					s--;
-				else
-					s=16;
-			}
-			else if(new_pad & PAD_DOWN)
-			{
-				if(s!=16)
-					s++;
-				else
-					s=0;
-			}
-			else if(new_pad & PAD_LEFT)
-			{
-				if(s>=15) s=14;
-				else if(s>=14) s=12;
-				else if(s>=12) s=9;
-				else if(s>=9) s=6;
-				else if(s>=6) s=3;
-				else if(s>=3) s=0;
-			}
-			else if(new_pad & PAD_RIGHT)
-			{
-				if(s>=14) s=15;
-				else if(s>=12) s=14;
-				else if(s>=9) s=12;
-				else if(s>=6) s=9;
-				else if(s>=3) s=6;
-				else s=3;
-			}
-			else if(new_pad & PAD_CROSS)
-			{
-				if(s<12) {
-					if(rgb[s/3][s%3] > 0) {
-						rgb[s/3][s%3]--;
-						setting->color[s/3] = 
-							ITO_RGBA(rgb[s/3][0], rgb[s/3][1], rgb[s/3][2], 0);
-						if(s/3 == 0) itoSetBgColor(setting->color[0]);
-					}
-				} else if(s==12) {
-					if(setting->screen_x > 0) {
-						setting->screen_x--;
-						screen_env.screen.x = setting->screen_x;
-						itoSetScreenPos(setting->screen_x, setting->screen_y);
-					}
-				} else if(s==13) {
-					if(setting->screen_y > 0) {
-						setting->screen_y--;
-						screen_env.screen.y = setting->screen_y;
-						itoSetScreenPos(setting->screen_x, setting->screen_y);
-					}
-				}
-			}
-			else if(new_pad & PAD_CIRCLE)
-			{
-				if(s<12) {
-					if(rgb[s/3][s%3] < 255) {
-						rgb[s/3][s%3]++;
-						setting->color[s/3] = 
-							ITO_RGBA(rgb[s/3][0], rgb[s/3][1], rgb[s/3][2], 0);
-						if(s/3 == 0) itoSetBgColor(setting->color[0]);
-					}
-				} else if(s==12) {
-					setting->screen_x++;
-					screen_env.screen.x = setting->screen_x;
-					itoSetScreenPos(setting->screen_x, setting->screen_y);
-				} else if(s==13) {
-					setting->screen_y++;
-					screen_env.screen.y = setting->screen_y;
-					itoSetScreenPos(setting->screen_x, setting->screen_y);
-				} else if(s==14) {
-					setting->interlace = !setting->interlace;
-					screen_env.interlace = setting->interlace;
-					itoGsReset();
-					itoGsEnvSubmit(&screen_env);
-				} else if(s==15) {
-					return;
-				} else if(s==16) {
-					setting->color[0] = DEF_COLOR1;
-					setting->color[1] = DEF_COLOR2;
-					setting->color[2] = DEF_COLOR3;
-					setting->color[3] = DEF_COLOR4;
-					setting->screen_x = DEF_SCREEN_X;
-					setting->screen_y = DEF_SCREEN_Y;
-					setting->interlace = DEF_INTERLACE;
-					screen_env.screen.x = setting->screen_x;
-					screen_env.screen.y = setting->screen_y;
-					screen_env.interlace = setting->interlace;
-					itoGsReset();
-					itoGsEnvSubmit(&screen_env);
-					itoSetBgColor(setting->color[0]);
-					//itoSetScreenPos(setting->screen_x, setting->screen_y);
-					
-					for(i=0; i<4; i++) {
-						rgb[i][0] = setting->color[i] & 0xFF;
-						rgb[i][1] = setting->color[i] >> 8 & 0xFF;
-						rgb[i][2] = setting->color[i] >> 16 & 0xFF;
-					}
-				}
-			}
-		}
-		
-		// 画面描画開始
-		clrScr(setting->color[0]);
-		
-		// 枠の中
-		x = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH;
-		y = SCREEN_MARGIN + FONT_HEIGHT*2 + LINE_THICKNESS + 12;
-		for(i=0; i<4; i++)
-		{
-			sprintf(c, "  COLOR%d R: %lu", i+1, rgb[i][0]);
-			printXY(c, x, y/2, setting->color[3], TRUE);
-			y += FONT_HEIGHT;
-			sprintf(c, "  COLOR%d G: %lu", i+1, rgb[i][1]);
-			printXY(c, x, y/2, setting->color[3], TRUE);
-			y += FONT_HEIGHT;
-			sprintf(c, "  COLOR%d B: %lu", i+1, rgb[i][2]);
-			printXY(c, x, y/2, setting->color[3], TRUE);
-			y += FONT_HEIGHT;
-			y += FONT_HEIGHT / 2;
-		}
-		
-		sprintf(c, "  SCREEN X: %d", setting->screen_x);
-		printXY(c, x, y/2, setting->color[3], TRUE);
-		y += FONT_HEIGHT;
-		sprintf(c, "  SCREEN Y: %d", setting->screen_y);
-		printXY(c, x, y/2, setting->color[3], TRUE);
-		y += FONT_HEIGHT;
-		y += FONT_HEIGHT / 2;
-		
-		if(setting->interlace)
-			sprintf(c, "  INTERLACE: ON");
-		else
-			sprintf(c, "  INTERLACE: OFF");
-		printXY(c, x, y/2, setting->color[3], TRUE);
-		y += FONT_HEIGHT;
-		y += FONT_HEIGHT / 2;
-		
-		printXY("  RETURN", x, y/2, setting->color[3], TRUE);
-		y += FONT_HEIGHT;
-		printXY("  INIT", x, y/2, setting->color[3], TRUE);
-		y += FONT_HEIGHT;
-		
-		y = s * FONT_HEIGHT + SCREEN_MARGIN+FONT_HEIGHT*2+12+LINE_THICKNESS;
-		if(s>=3) y+=FONT_HEIGHT/2;
-		if(s>=6) y+=FONT_HEIGHT/2;
-		if(s>=9) y+=FONT_HEIGHT/2;
-		if(s>=12) y+=FONT_HEIGHT/2;
-		if(s>=14) y+=FONT_HEIGHT/2;
-		if(s>=15) y+=FONT_HEIGHT/2;
-		drawChar(127, x, y/2, setting->color[3]);
-		
-		x = SCREEN_MARGIN;
-		y = SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT;
-		if (s <= 13) strcpy(c, "○:Add ×:Away");
-		else if(s==14) strcpy(c, "○:Change");
-		else strcpy(c, "○:OK");
-		
-		setScrTmp("", c);
-		drawScr();
-	}
-}
-
-////////////////////////////////////////////////////////////////////////
 // Config画面
 void config(char *mainMsg)
 {
 	char c[MAX_PATH];
 	int i;
-	int s;
+	int s;	//select_y
 	int x, y;
+	int page=0;
+	int r,g,b;
+	int s_x=0;	//select_x
 	
 	tmpsetting = setting;
 	setting = (SETTING*)malloc(sizeof(SETTING));
@@ -460,77 +276,180 @@ void config(char *mainMsg)
 	{
 		// 操作
 		waitPadReady(0, 0);
-		if(readpad())
-		{
-			if(new_pad & PAD_UP)
-			{
-				if(s!=0)
-					s--;
-				else
-					s=CANCEL;
-			}
-			else if(new_pad & PAD_DOWN)
-			{
-				if(s!=CANCEL)
-					s++;
-				else
-					s=0;
-			}
-			else if(new_pad & PAD_LEFT)
-			{
-				if(s>=OK)
-					s=TIMEOUT;
-				else
-					s=DEFAULT;
-			}
-			else if(new_pad & PAD_RIGHT)
-			{
-				if(s<TIMEOUT)
-					s=TIMEOUT;
-				else if(s<OK)
-					s=OK;
-			}
-			else if(new_pad & PAD_CROSS)
-			{
-				if(s<TIMEOUT)
-					setting->dirElf[s][0]=0;
-				else if(s==TIMEOUT)
-				{
-					if(setting->timeout > 0)
-						setting->timeout--;
+		if(readpad()){
+			if(new_pad & PAD_UP){	//上
+				s--;
+				if(s<0) s=15;
+				if(page==0){
+					if(s==13) s=11;
+				}
+				else if(page==1){
+					if(s==13) s=2;
+				}
+				else if(page==2){
+					if(s==13) s=7;
 				}
 			}
-			else if(new_pad & PAD_CIRCLE)
-			{
-				if(s<TIMEOUT)
-				{
-					getFilePath(setting->dirElf[s], TRUE);
-					if(!strncmp(setting->dirElf[s], "mc", 2)){
-						sprintf(c, "mc%s", &setting->dirElf[s][3]);
-						strcpy(setting->dirElf[s], c);
+			else if(new_pad & PAD_DOWN){	//下
+				s++;
+				if(s>15) s=0;
+				if(page==0){
+					if(s==12) s=OK;	//OKまで移動
+				}
+				else if(page==1){
+					if(s==3) s=OK;		//OKまで移動
+				}
+				else if(page==2){
+					if(s==8) s=OK;		//OKまで移動
+				}
+			}
+			else if(new_pad & PAD_LEFT){	//左
+				if(page==0){
+					s=DEFAULT;	//DEFAULTまで移動
+				}
+				else if(page==1){
+					s=TIMEOUT;		//TIMEOUTまで移動
+				}
+				else if(page==2){
+					if(s<4){
+						s_x--;
+						if(s_x<0) s_x=2;
+					}
+					else
+						s=COLOR1;		//COLOR1まで移動
+				}
+			}
+			else if(new_pad & PAD_RIGHT){	//右
+				if(page==2){
+					if(s<4){
+						s_x++;
+						if(s_x>2) s_x=0;
+					}
+					else
+						s=OK;	//OK
+				}
+				else
+					s=OK;	//OK
+			}
+			else if(new_pad & PAD_CROSS){	//×
+				if(page==0){
+					if(s<12)
+					setting->dirElf[s][0]=0;
+				}
+				if(page==1){
+					if(s==0){
+						if(setting->timeout > 0) setting->timeout--;
 					}
 				}
-				else if(s==TIMEOUT)
-					setting->timeout++;
-				else if(s==FILENAME)
-					setting->filename = !setting->filename;
-				else if(s==DISCCONTROL)
-					setting->discControl = !setting->discControl;
-				else if(s==SCREEN)
-					setColor();
-				else if(s==OK)
-				{
+				if(page==2){
+					if(s<4){
+						r = setting->color[s] & 0xFF;
+						g = setting->color[s] >> 8 & 0xFF;
+						b = setting->color[s] >> 16 & 0xFF;
+						if(s_x==0){
+							if(r>0) r--;
+						}
+						if(s_x==1){
+							if(g>0) g--;
+						}
+						if(s_x==2){
+							if(b>0) b--;
+						}
+						setting->color[s] = ITO_RGBA(r, g, b, 0);
+						if(s == 0) itoSetBgColor(setting->color[0]);
+					}
+					if(s==4){	//SCREEN X
+						if(setting->screen_x > 0) {
+							setting->screen_x--;
+							screen_env.screen.x = setting->screen_x;
+							itoSetScreenPos(setting->screen_x, setting->screen_y);
+						}
+					}
+					if(s==5){	//SCREEN Y
+						if(setting->screen_y > 0) {
+							setting->screen_y--;
+							screen_env.screen.y = setting->screen_y;
+							itoSetScreenPos(setting->screen_x, setting->screen_y);
+						}
+					}
+				}
+			}
+			else if(new_pad & PAD_CIRCLE){	//○
+				if(page==0){
+					if(s<OK){
+						getFilePath(setting->dirElf[s], TRUE);
+						if(!strncmp(setting->dirElf[s], "mc", 2)){
+							sprintf(c, "mc%s", &setting->dirElf[s][3]);
+							strcpy(setting->dirElf[s], c);
+						}
+					}
+				}
+				if(page==1){
+					if(s==TIMEOUT)
+						setting->timeout++;
+					else if(s==FILENAME)
+						setting->filename = !setting->filename;
+					else if(s==DISCCONTROL)
+						setting->discControl = !setting->discControl;
+				}
+				if(page==2){
+					if(s<4){
+						r = setting->color[s] & 0xFF;
+						g = setting->color[s] >> 8 & 0xFF;
+						b = setting->color[s] >> 16 & 0xFF;
+						if(s_x==0){
+							if(r<255) r++;
+						}
+						if(s_x==1){
+							if(g<255) g++;
+						}
+						if(s_x==2){
+							if(b<255) b++;
+						}
+						setting->color[s] = ITO_RGBA(r, g, b, 0);
+						if(s == 0) itoSetBgColor(setting->color[0]);
+					}
+					else if(s==4) {	//SCREEN X
+						setting->screen_x++;
+						screen_env.screen.x = setting->screen_x;
+						itoSetScreenPos(setting->screen_x, setting->screen_y);
+					}
+					else if(s==5) {	//SCREEN Y
+						setting->screen_y++;
+						screen_env.screen.y = setting->screen_y;
+						itoSetScreenPos(setting->screen_x, setting->screen_y);
+					}
+					else if(s==6) {	//フリッカーコントロール
+						setting->interlace = !setting->interlace;
+					}
+					else if(s==7) {	//INIT
+						setting->color[0] = DEF_COLOR1;
+						setting->color[1] = DEF_COLOR2;
+						setting->color[2] = DEF_COLOR3;
+						setting->color[3] = DEF_COLOR4;
+						setting->screen_x = DEF_SCREEN_X;
+						setting->screen_y = DEF_SCREEN_Y;
+						setting->interlace = DEF_INTERLACE;
+						//
+						screen_env.screen.x = setting->screen_x;
+						screen_env.screen.y = setting->screen_y;
+						screen_env.interlace = ITO_INTERLACE;
+						itoGsReset();
+						itoGsEnvSubmit(&screen_env);
+						itoSetBgColor(setting->color[0]);
+					}
+				}
+				if(s==OK){
 					free(tmpsetting);
 					saveConfig(mainMsg);
 					break;
 				}
-				else if(s==CANCEL)
-				{
+				if(s==CANCEL){
 					free(setting);
 					setting = tmpsetting;
 					screen_env.screen.x = setting->screen_x;
 					screen_env.screen.y = setting->screen_y;
-					screen_env.interlace = setting->interlace;
+					screen_env.interlace = ITO_INTERLACE;	//setting->interlace;
 					itoGsReset();
 					itoGsEnvSubmit(&screen_env);
 					itoSetBgColor(setting->color[0]);
@@ -538,104 +457,192 @@ void config(char *mainMsg)
 					break;
 				}
 			}
+			else if(new_pad & PAD_L1){
+				page--;
+				s_x=0;
+				if(page<0) page=2;
+				if(page==0){
+					s=DEFAULT;	//DEFAULTまで移動
+				}
+				else if(page==1){
+					s=TIMEOUT;		//TIMEOUTまで移動
+				}
+				else if(page==2){
+					s=COLOR1;		//COLOR1まで移動
+				}
+			}
+			else if(new_pad & PAD_R1){
+				page++;
+				s_x=0;
+				if(page>2) page=0;
+				if(page==0){
+					s=DEFAULT;	//DEFAULTまで移動
+				}
+				else if(page==1){
+					s=TIMEOUT;		//TIMEOUTまで移動
+				}
+				else if(page==2){
+					s=COLOR1;		//COLOR1まで移動
+				}
+			}
+			else if(new_pad & PAD_SELECT){
+				s=CANCEL;	//CANCEL
+			}
+			else if(new_pad & PAD_START){
+				s=OK;	//OK
+			}
 		}
 		
 		// 画面描画開始
 		clrScr(setting->color[0]);
-		
+
+		//ページカーソルの枠
+		drawFrame(FONT_WIDTH*1.5, SCREEN_MARGIN+FONT_HEIGHT,
+			FONT_WIDTH*62.5, SCREEN_MARGIN+FONT_HEIGHT*2,
+			setting->color[1]);
+
+		//ページカーソル
+		itoSprite(setting->color[1],
+			FONT_WIDTH*8+FONT_WIDTH*16*page, SCREEN_MARGIN+FONT_HEIGHT,
+			FONT_WIDTH*8+FONT_WIDTH*16+FONT_WIDTH*16*page, SCREEN_MARGIN+FONT_HEIGHT*2, 0);
+		printXY("<L1  BUTTON SETTING       MISC       SCREEN SETTING  R1>",
+			FONT_WIDTH*4, SCREEN_MARGIN+FONT_HEIGHT+2, setting->color[3], TRUE);
+
 		// 枠の中
-		x = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH;
-		y = SCREEN_MARGIN + FONT_HEIGHT*2 + LINE_THICKNESS + 12;
-		printXY("BUTTON SETTING", x, y/2, setting->color[3], TRUE);
-		y += FONT_HEIGHT;
-		for(i=0; i<12; i++)
-		{
-			switch(i)
-			{
-			case 0:
-				strcpy(c,"  DEFAULT: ");
-				break;
-			case 1:
-				strcpy(c,"  ○     : ");
-				break;
-			case 2:
-				strcpy(c,"  ×     : ");
-				break;
-			case 3:
-				strcpy(c,"  □     : ");
-				break;
-			case 4:
-				strcpy(c,"  △     : ");
-				break;
-			case 5:
-				strcpy(c,"  L1     : ");
-				break;
-			case 6:
-				strcpy(c,"  R1     : ");
-				break;
-			case 7:
-				strcpy(c,"  L2     : ");
-				break;
-			case 8:
-				strcpy(c,"  R2     : ");
-				break;
-			case 9:
-				strcpy(c,"  L3     : ");
-				break;
-			case 10:
-				strcpy(c,"  R3     : ");
-				break;
-			case 11:
-				strcpy(c,"  START  : ");
-				break;
+		x = FONT_WIDTH*3;
+		y = SCREEN_MARGIN+FONT_HEIGHT*3;
+
+		//ページ1
+		if(page==0){
+			for(i=0; i<12; i++){
+				switch(i){
+				case 0:
+					strcpy(c,"  DEFAULT: ");
+					break;
+				case 1:
+					strcpy(c,"  ○     : ");
+					break;
+				case 2:
+					strcpy(c,"  ×     : ");
+					break;
+				case 3:
+					strcpy(c,"  □     : ");
+					break;
+				case 4:
+					strcpy(c,"  △     : ");
+					break;
+				case 5:
+					strcpy(c,"  L1     : ");
+					break;
+				case 6:
+					strcpy(c,"  R1     : ");
+					break;
+				case 7:
+					strcpy(c,"  L2     : ");
+					break;
+				case 8:
+					strcpy(c,"  R2     : ");
+					break;
+				case 9:
+					strcpy(c,"  L3     : ");
+					break;
+				case 10:
+					strcpy(c,"  R3     : ");
+					break;
+				case 11:
+					strcpy(c,"  START  : ");
+					break;
+				}
+				strcat(c, setting->dirElf[i]);
+				printXY(c, x, y, setting->color[3], TRUE);
+				y += FONT_HEIGHT;
 			}
-			strcat(c, setting->dirElf[i]);
-			printXY(c, x, y/2, setting->color[3], TRUE);
-			y += FONT_HEIGHT;
 		}
-		
-		y += FONT_HEIGHT / 2;
-		
-		printXY("MISC", x, y/2, setting->color[3], TRUE);
+		//ページ2
+		if(page==1){
+			sprintf(c, "  TIMEOUT: %d", setting->timeout);
+			printXY(c, x, y, setting->color[3], TRUE);
+			y += FONT_HEIGHT;
+			
+			if(setting->discControl)
+				sprintf(c, "  DISC CONTROL: ON");
+			else
+				sprintf(c, "  DISC CONTROL: OFF");
+			printXY(c, x, y, setting->color[3], TRUE);
+			y += FONT_HEIGHT;
+			
+			if(setting->filename)
+				sprintf(c, "  PRINT ONLY FILENAME: ON");
+			else
+				sprintf(c, "  PRINT ONLY FILENAME: OFF");
+			printXY(c, x, y, setting->color[3], TRUE);
+		}
+		//ページ3
+		if(page==2){
+			for(i=0;i<4;i++){
+				r = setting->color[i] & 0xFF;
+				g = setting->color[i] >> 8 & 0xFF;
+				b = setting->color[i] >> 16 & 0xFF;
+				sprintf(c, "■");	//色のプレビュー
+				printXY(c, x+FONT_WIDTH*32, y, setting->color[i], TRUE);
+				sprintf(c, "  COLOR%d:  R:%3d  G:%3d  B:%3d", i+1, r, g, b);
+				printXY(c, x, y, setting->color[3], TRUE);
+				y += FONT_HEIGHT;
+			}
+			sprintf(c, "  SCREEN X: %3d", setting->screen_x );
+			printXY(c, x, y, setting->color[3], TRUE);
+			y += FONT_HEIGHT;
+			sprintf(c, "  SCREEN Y: %3d", setting->screen_y );
+			printXY(c, x, y, setting->color[3], TRUE);
+			y += FONT_HEIGHT;
+			if(setting->interlace)
+				sprintf(c, "  FLICKER CONTROL: ON");
+			else
+				sprintf(c, "  FLICKER CONTROL: OFF");
+			printXY(c, x, y, setting->color[3], TRUE);
+			y += FONT_HEIGHT;
+			printXY("  INIT", x, y, setting->color[3], TRUE);
+		}
+
+		//OKとCANCEL
+		x = FONT_WIDTH*3;
+		y = SCREEN_MARGIN+FONT_HEIGHT*17;
+		printXY("  OK", x, y, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
-		sprintf(c, "  TIMEOUT: %d", setting->timeout);
-		printXY(c, x, y/2, setting->color[3], TRUE);
-		y += FONT_HEIGHT;
-		
-		if(setting->discControl)
-			sprintf(c, "  DISC CONTROL: ON");
-		else
-			sprintf(c, "  DISC CONTROL: OFF");
-		printXY(c, x, y/2, setting->color[3], TRUE);
-		y += FONT_HEIGHT;
-		
-		if(setting->filename)
-			sprintf(c, "  PRINT ONLY FILENAME: ON");
-		else
-			sprintf(c, "  PRINT ONLY FILENAME: OFF");
-		printXY(c, x, y/2, setting->color[3], TRUE);
-		y += FONT_HEIGHT;
-		
-		printXY("  SCREEN SETTING", x, y/2, setting->color[3], TRUE);
-		y += FONT_HEIGHT;
-		y += FONT_HEIGHT / 2;
-		printXY("  OK", x, y/2, setting->color[3], TRUE);
-		y += FONT_HEIGHT;
-		printXY("  CANCEL", x, y/2, setting->color[3], TRUE);
-		
-		y = s * FONT_HEIGHT + SCREEN_MARGIN+FONT_HEIGHT*3+12+LINE_THICKNESS;
-		if(s>=TIMEOUT)
-			y += FONT_HEIGHT + FONT_HEIGHT / 2;
-		if(s>=OK)
-			y += FONT_HEIGHT / 2;
-		drawChar(127, x, y/2, setting->color[3]);
-		
-		if (s < TIMEOUT) sprintf(c, "○:Edit ×:Clear");
-		else if(s==TIMEOUT) sprintf(c, "○:Add ×:Away");
-		else if(s==FILENAME) sprintf(c, "○:Change");
-		else if(s==DISCCONTROL) sprintf(c, "○:Change");
-		else sprintf(c, "○:OK");
-		
+		printXY("  CANCEL", x, y, setting->color[3], TRUE);
+
+		//カーソル
+		x = FONT_WIDTH*3;
+		y = SCREEN_MARGIN+FONT_HEIGHT*3+s*FONT_HEIGHT;
+		if(page==2)
+			if(s<4) x = FONT_WIDTH*13 + FONT_WIDTH*s_x*7;
+		drawChar('>', x, y, setting->color[3]);
+
+		//操作説明
+		if(page==0){
+			if (s < OK)
+				sprintf(c, "○:Edit ×:Clear");
+			else
+				sprintf(c, "○:OK");
+		}
+		if(page==1){
+			if(s==TIMEOUT)
+				sprintf(c, "○:Add ×:Away");
+			else if(s==FILENAME)
+				sprintf(c, "○:Change");
+			else if(s==DISCCONTROL)
+				sprintf(c, "○:Change");
+			else
+				sprintf(c, "○:OK");
+		}
+		if(page==2){
+			if(s<6)
+				sprintf(c, "○:Add ×:Away");
+			else if(s==6)
+				sprintf(c, "○:Change");
+			else
+				sprintf(c, "○:OK");
+		}
 		setScrTmp("", c);
 		drawScr();
 	}

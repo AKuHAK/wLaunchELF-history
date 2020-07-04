@@ -32,17 +32,17 @@
 
 enum
 {
-	SCREEN_WIDTH = 512,
-	SCREEN_HEIGHT = 432,
-	SCREEN_MARGIN = 12,
-	FONT_WIDTH = 8,
-	FONT_HEIGHT = 16,
+	SCREEN_WIDTH = 640,
+	SCREEN_HEIGHT = 448,
+	SCREEN_MARGIN = 14,
+	FONT_WIDTH = 10,
+	FONT_HEIGHT = 20,
 	LINE_THICKNESS = 2,
 	
 	MAX_NAME = 256,
 	MAX_PATH = 1025,
 	MAX_ENTRY = 2048,
-	MAX_ROWS = 21,
+	MAX_ROWS = 16,
 	MAX_PARTITIONS=100
 };
 
@@ -55,7 +55,7 @@ typedef struct
 	int screen_x;
 	int screen_y;
 	int discControl;
-	int interlace;
+	int interlace;	//FLICKER CONTROL
 } SETTING;
 
 extern char LaunchElfDir[MAX_PATH], LastDir[MAX_NAME];
@@ -70,6 +70,8 @@ void RunLoaderElf(char *filename, char *);
 
 /* draw.c */
 extern itoGsEnv screen_env;
+int InitBIOSFont(void);
+void FreeBIOSFont(void);
 void setScrTmp(const char *msg0, const char *msg1);
 void drawMsg(const char *msg);
 void setupito(void);
