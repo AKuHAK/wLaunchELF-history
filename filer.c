@@ -2884,21 +2884,36 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 							files[i].type=TYPE_FILE;
 					}
 					else{
-						files[i].type=TYPE_FILE;
+						char *ext;
+						ext = getExtension(files[i].name);
+						if(ext!=NULL&&!stricmp(ext, ".elf"))
+							files[i].type=TYPE_ELF;
+						else
+							files[i].type=TYPE_FILE;
 					}
 				}
 				else{
-					checkELFret = checkELFheader(fullpath);
-					//mountedParty[0][0]=0;
-					if(checkELFret==1)
-						files[i].type=TYPE_ELF;
-					else
-						files[i].type=TYPE_FILE;
-					if(!strncmp(path, "hdd", 3)){
-						//HDDのとき再マウント
-						mountedParty[0][0]=0;
-						getHddParty(path, NULL, party, NULL);
-						mountParty(party);
+					if (setting->fileELFCheck){
+						checkELFret = checkELFheader(fullpath);
+						//mountedParty[0][0]=0;
+						if(checkELFret==1)
+							files[i].type=TYPE_ELF;
+						else
+							files[i].type=TYPE_FILE;
+						if(!strncmp(path, "hdd", 3)){
+							//HDDのとき再マウント
+							mountedParty[0][0]=0;
+							getHddParty(path, NULL, party, NULL);
+							mountParty(party);
+						}
+					}
+					else{
+						char *ext;
+						ext = getExtension(files[i].name);
+						if(ext!=NULL&&!stricmp(ext, ".elf"))
+							files[i].type=TYPE_ELF;
+						else
+							files[i].type=TYPE_FILE;
 					}
 				}
 				//psuファイルか調べる
