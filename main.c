@@ -1567,10 +1567,7 @@ int main(int argc, char *argv[])
 
 	//CNFファイルを読み込む前に初期化
 	InitLanguage();
-
-	//設定をロード
-	loadConfig(mainMsg);
-	SetScreenPosVM();
+	//loadConfig(mainMsg);
 
 	//cd
 	if(boot==CD_BOOT)
@@ -1578,6 +1575,10 @@ int main(int argc, char *argv[])
 	//mass
 	if(boot==MASS_BOOT)
 		loadUsbMassModules();
+
+	//設定をロード
+	loadConfig(mainMsg);
+	SetScreenPosVM();
 
 	//discControl
 	if(setting->discControl)
