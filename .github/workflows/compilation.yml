@@ -49,10 +49,11 @@ jobs:
         path: BOOT.ELF
 
     - name: Create release
-      if: github.ref == 'refs/heads/master'
+      if: github.ref == 'refs/heads/PSX_xfrom'
       uses: marvinpinto/action-automatic-releases@latest
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        automatic_release_tag: "latest"
-        title: "Latest development build"
-        files: BOOT.ELF
+        automatic_release_tag: "PSX_xfrom"
+        title: "PSX_xfrom development build"
+        files: |
+          *.ELF
