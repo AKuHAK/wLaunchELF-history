@@ -19,6 +19,15 @@ jobs:
     - run: |
         git fetch --prune --unshallow
 
+    - name: Install modified ps2sdk and others
+      run: |
+        git clone https://github.com/akuhak/ps2sdk.git -b PSX_xfrom
+        cd ps2sdk && make && make all install clean && cd ..
+        git clone https://github.com/ps2dev/gsKit.git
+        cd gsKit && make && make all install clean && cd ..
+        git clone https://github.com/ps2dev/ps2dk-ports.git
+        cd ps2dk-ports && make && cd ..
+
     - name: Install ps2eth
       run: |
         git clone https://github.com/ps2dev/ps2eth.git
