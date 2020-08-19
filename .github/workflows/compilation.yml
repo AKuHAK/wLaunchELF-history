@@ -25,8 +25,8 @@ jobs:
         cd ps2sdk && make && make all install clean && cd ..
         git clone https://github.com/ps2dev/gsKit.git
         cd gsKit && make && make all install clean && cd ..
-        git clone https://github.com/ps2dev/ps2dk-ports.git
-        cd ps2dk-ports && make && cd ..
+        git clone https://github.com/ps2dev/ps2sdk-ports.git
+        cd ps2sdk-ports && make && cd ..
 
     - name: Install ps2eth
       run: |
