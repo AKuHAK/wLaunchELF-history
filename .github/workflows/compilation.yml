@@ -24,13 +24,14 @@ jobs:
         git clone https://github.com/ps2dev/ps2eth.git
         cd ps2eth && make clean all install
 
+    - name: Install smb2
+      run: |
+        git clone https://github.com/sahlberg/libsmb2
+        cd libsmb2/lib && make -f Makefile.PS2_EE clean
+        make -f Makefile.PS2_EE install
+
     - name: Compile wLaunchELF
       run: |
-        git submodule init && git submodule update
-        cd smb2
-        make
-        make install
-        cd ..
         make
     
     - name: Get short SHA
