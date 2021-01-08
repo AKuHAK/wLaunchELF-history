@@ -176,7 +176,6 @@ typedef struct
 	int screen_y;
 	int numCNF;
 	int swapKeys;
-	int HOSTwrite;
 	int Brightness;
 	int TV_mode;
 	int Popup_Opaque;
@@ -209,7 +208,6 @@ extern int GUI_active;  // Skin and Main Skin switch
 extern int cdmode;      //Last detected disc type
 
 void load_vmc_fs(void);
-void load_ps2host(void);
 void loadHddModules(void);
 void loadHdlInfoModule(void);
 int uLE_related(char *pathout, const char *pathin);
@@ -333,8 +331,6 @@ extern int nparties;                     //Clearing this causes FileBrowser to r
 extern unsigned char *elisaFnt;
 char *PathPad_menu(const char *path);
 int getFilePath(char *out, const int cnfmode);
-void initHOST(void);
-char *makeHostPath(char *dp, char *sp);
 int ynDialog(const char *message);
 void nonDialog(char *message);
 int keyboard(char *out, int max);
@@ -354,6 +350,12 @@ int mountParty(const char *party);
 void unmountParty(int party_ix);
 void unmountAll(void);
 int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode);
+/* VFS layer */
+struct vfs_fh *vfsOpen(char *path, int mode);
+int vfsLseek(struct vfs_fh *fh, int where, int how);
+int vfsRead(struct vfs_fh *fh, void *buf, int size);
+int vfsWrite(struct vfs_fh *fh, void *buf, int size);
+int vfsClose(struct vfs_fh *fh);
 
 /* hdd.c */
 void DebugDisp(char *Message);
@@ -453,5 +455,14 @@ extern int USB_mass_max_drives;
 extern u64 USB_mass_scan_time;
 extern int USB_mass_scanned;
 extern int USB_mass_loaded;  //0==none, 1==internal, 2==external
+
+#define MC_ATTR_norm_folder 0x8427  //Normal folder on PS2 MC
+#define MC_ATTR_prot_folder 0x842F  //Protected folder on PS2 MC
+#define MC_ATTR_PS1_folder 0x9027   //PS1 save folder on PS2 MC
+#define MC_ATTR_norm_file 0x8497    //file (PS2/PS1) on PS2 MC
+#define MC_ATTR_PS1_file 0x9417     //PS1 save file on PS1 MC
+extern int size_valid;
+extern int time_valid;
+void clear_mcTable(sceMcTblGetDir *mcT);
 
 #endif

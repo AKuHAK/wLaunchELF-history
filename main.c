@@ -2,31 +2,20 @@
 //File name:   main.c
 //---------------------------------------------------------------------------
 #include "launchelf.h"
-#ifdef SMB
-#include "SMB_test.h"
-#include "ps2smb.h"
-#endif
+#include "smb2.h"
 
 extern u8 iomanx_irx[];
 extern int size_iomanx_irx;
 extern u8 filexio_irx[];
 extern int size_filexio_irx;
-extern u8 ps2dev9_irx[];
-extern int size_ps2dev9_irx;
-extern u8 ps2ip_irx[];
-extern int size_ps2ip_irx;
-extern u8 ps2smap_irx[];
-extern int size_ps2smap_irx;
-extern u8 ps2host_irx[];
-extern int size_ps2host_irx;
-#ifdef SMB
-extern u8 smbman_irx[];
-extern int size_smbman_irx;
-#endif
+extern u8 DEV9_irx[];
+extern int size_DEV9_irx;
+extern u8 NETMAN_irx[];
+extern int size_NETMAN_irx;
+extern u8 SMAP_irx[];
+extern int size_SMAP_irx;
 extern u8 vmc_fs_irx[];
 extern int size_vmc_fs_irx;
-extern u8 ps2ftpd_irx[];
-extern int size_ps2ftpd_irx;
 extern u8 ps2atad_irx[];
 extern int size_ps2atad_irx;
 extern u8 ps2hdd_irx[];
@@ -37,8 +26,6 @@ extern u8 poweroff_irx[];
 extern int size_poweroff_irx;
 extern u8 loader_elf;
 extern int size_loader_elf;
-extern u8 ps2netfs_irx[];
-extern int size_ps2netfs_irx;
 extern u8 iopmod_irx[];
 extern int size_iopmod_irx;
 extern u8 usbd_irx[];
@@ -114,18 +101,14 @@ static u8 have_cdvd = 0;
 static u8 have_usbd = 0;
 static u8 have_usb_mass = 0;
 static u8 have_ps2smap = 0;
-static u8 have_ps2host = 0;
-static u8 have_ps2ftpd = 0;
 static u8 have_ps2kbd = 0;
 static u8 have_hdl_info = 0;
 //State of Checkable Modules (valid header)
 static u8 have_poweroff = 0;
 static u8 have_ps2dev9 = 0;
-static u8 have_ps2ip = 0;
 static u8 have_ps2atad = 0;
 static u8 have_ps2hdd = 0;
 static u8 have_ps2fs = 0;
-static u8 have_ps2netfs = 0;
 static u8 have_smbman = 0;
 static u8 have_vmc_fs = 0;
 //State of whether DEV9 was successfully loaded or not.
@@ -200,14 +183,9 @@ static int drawMainScreen2(int TV_mode);
 static void delay(int count);
 static void initsbv_patches(void);
 static void load_ps2dev9(void);
-static void load_ps2ip(void);
+static void load_ps2smap(void);
 static void load_ps2atad(void);
-#ifdef SMB
-static void load_smbman(void);
-#endif
 static void ShowDebugInfo(void);
-static void load_ps2ftpd(void);
-static void load_ps2netfs(void);
 static void loadBasicModules(void);
 static void loadCdModules(void);
 static int loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP);
@@ -295,7 +273,7 @@ static void Show_About_uLE(void)
 		//Display section
 		if (event || post_event) {  //NB: We need to update two frame buffers per event
 			clrScr(setting->color[COLOR_BACKGR]);
-			sprintf(TextRow, "About wLaunchELF %s  %s", ULE_VERSION, ULE_VERDATE);
+			sprintf(TextRow, "About smb2LaunchELF %s  %s", ULE_VERSION, ULE_VERDATE);
 			PrintPos(03, hpos, TextRow);
 			sprintf(TextRow, "                         commit: %s", GIT_HASH);
 			PrintPos(04, hpos, TextRow);
@@ -664,7 +642,7 @@ static void load_ps2dev9(void)
 	int ret, rcode;
 
 	if (!have_ps2dev9) {
-		ret = SifExecModuleBuffer(ps2dev9_irx, size_ps2dev9_irx, 0, NULL, &rcode);
+		ret = SifExecModuleBuffer(DEV9_irx, size_DEV9_irx, 0, NULL, &rcode);
 		ps2dev9_loaded = (ret >= 0 && rcode == 0);  //DEV9.IRX must have successfully loaded and returned RESIDENT END.
 		have_ps2dev9 = 1;
 	}
@@ -672,23 +650,19 @@ static void load_ps2dev9(void)
 //------------------------------
 //endfunc load_ps2dev9
 //---------------------------------------------------------------------------
-static void load_ps2ip(void)
+static void load_ps2smap(void)
 {
-	int ret;
-
 	load_ps2dev9();
-	if (!have_ps2ip) {
-		SifExecModuleBuffer(ps2ip_irx, size_ps2ip_irx, 0, NULL, &ret);
-		have_ps2ip = 1;
-	}
 	if (!have_ps2smap) {
-		SifExecModuleBuffer(ps2smap_irx, size_ps2smap_irx,
-		                    if_conf_len, &if_conf[0], &ret);
+		SifExecModuleBuffer(NETMAN_irx, size_NETMAN_irx,
+				    0, NULL, NULL);
+		SifExecModuleBuffer(SMAP_irx, size_SMAP_irx,
+				    0, NULL, NULL);
 		have_ps2smap = 1;
 	}
 }
 //------------------------------
-//endfunc load_ps2ip
+//endfunc load_ps2smap
 //---------------------------------------------------------------------------
 static void load_ps2atad(void)
 {
@@ -729,37 +703,6 @@ static void load_ps2atad(void)
 //------------------------------
 //endfunc load_ps2atad
 //---------------------------------------------------------------------------
-void load_ps2host(void)
-{
-	int ret;
-
-	setupPowerOff();  //resolves the stall out when opening host: from LaunchELF's FileBrowser
-	load_ps2ip();
-	if (!have_ps2host) {
-		SifExecModuleBuffer(ps2host_irx, size_ps2host_irx, 0, NULL, &ret);
-		have_ps2host = 1;
-	}
-}
-//------------------------------
-//endfunc load_ps2host
-//---------------------------------------------------------------------------
-#ifdef SMB
-static void load_smbman(void)
-{
-	int ret;
-
-	setupPowerOff();  //resolves stall out when opening smb: FileBrowser
-	load_ps2ip();
-	if (!have_smbman) {
-		SifExecModuleBuffer(smbman_irx, size_smbman_irx, 0, NULL, &ret);
-		have_smbman = 1;
-	}
-}
-//------------------------------
-//endfunc load_smbman
-//---------------------------------------------------------------------------
-#include "SMB_test.c"
-#endif
 //---------------------------------------------------------------------------
 //Function to show a screen with debugging info
 //------------------------------
@@ -767,13 +710,6 @@ static void ShowDebugInfo(void)
 {
 	char TextRow[256];
 	int i, event, post_event = 0;
-#ifdef SMB
-	int row;
-
-	load_smbman();
-	loadSMBCNF("mc0:/SYS-CONF/SMB.CNF");
-	smbCurrentServer = 0;
-#endif
 	event = 1;  //event = initial entry
 	//----- Start of event loop -----
 	while (1) {
@@ -781,23 +717,6 @@ static void ShowDebugInfo(void)
 		waitAnyPadReady();
 		if (readpad() && new_pad) {
 			event |= 2;
-#ifdef SMB
-			if (new_pad & PAD_CIRCLE) {
-				if (smbCurrentServer + 1 < smbServerListCount)
-					smbCurrentServer++;
-				else
-					smbCurrentServer = 0;
-			} else if (new_pad & PAD_CROSS) {
-				if (smbCurrentServer > 0)
-					smbCurrentServer--;
-				else
-					smbCurrentServer = smbServerListCount - 1;
-			} else if (new_pad & PAD_SQUARE) {
-				smbLogon_Server(smbCurrentServer);
-			} else if (new_pad & PAD_TRIANGLE) {
-				smbServerList[smbCurrentServer].Server_Logon_f = 0;
-			} else
-#endif
 			{
 				if (setting->GUI_skin[0]) {
 					GUI_active = 1;
@@ -822,36 +741,7 @@ static void ShowDebugInfo(void)
 			sprintf(TextRow, "boot_path == \"%s\"", boot_path);
 			PrintRow(-1, TextRow);
 			sprintf(TextRow, "LaunchElfDir == \"%s\"", LaunchElfDir);
-#ifndef SMB
 			PrintRow(-1, TextRow);
-#else
-			row = PrintRow(-1, TextRow);
-			int si = smbCurrentServer;
-			sprintf(TextRow, "Server Index = %d of %d", si, smbServerListCount);
-			PrintRow(row + 1, TextRow);
-			sprintf(TextRow, "Server_IP = %s", smbServerList[si].Server_IP);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "Server_Port = %d", smbServerList[si].Server_Port);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "Username = %s", smbServerList[si].Username);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "Password = %s", smbServerList[si].Password);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "PasswordType = %d", smbServerList[si].PasswordType);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "PassHash_f = %d", smbServerList[si].PassHash_f);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "Server_Logon_f = %d", smbServerList[si].Server_Logon_f);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "Server_FBID = %s", smbServerList[si].Server_FBID);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "\xFF"
-			                 "0 Index++  \xFF"
-			                 "1 Index--  \xFF"
-			                 "2 Logon  \xFF"
-			                 "3 Forget Logon");
-			PrintRow(-1, TextRow);
-#endif
 		}  //ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -874,37 +764,6 @@ void load_vmc_fs(void)
 }
 //------------------------------
 //endfunc load_vmc_fs
-//---------------------------------------------------------------------------
-static void load_ps2ftpd(void)
-{
-	int ret;
-	int arglen;
-	char *arg_p;
-
-	arg_p = "-anonymous";
-	arglen = strlen(arg_p);
-
-	load_ps2ip();
-	if (!have_ps2ftpd) {
-		SifExecModuleBuffer(ps2ftpd_irx, size_ps2ftpd_irx, arglen, arg_p, &ret);
-		have_ps2ftpd = 1;
-	}
-}
-//------------------------------
-//endfunc load_ps2ftpd
-//---------------------------------------------------------------------------
-static void load_ps2netfs(void)
-{
-	int ret;
-
-	load_ps2ip();
-	if (!have_ps2netfs) {
-		SifExecModuleBuffer(ps2netfs_irx, size_ps2netfs_irx, 0, NULL, &ret);
-		have_ps2netfs = 1;
-	}
-}
-//------------------------------
-//endfunc load_ps2netfs
 //---------------------------------------------------------------------------
 static void loadBasicModules(void)
 {
@@ -1231,10 +1090,6 @@ static void loadNetModules(void)
 		drawMsg(LNG(Loading_NetFS_and_FTP_Server_Modules));
 
 		getIpConfig();  //RA NB: I always get that info, early in init
-		//             //But sometimes it is useful to do it again (HDD)
-		// Also, my module checking makes some other tests redundant
-		load_ps2netfs();  // loads ps2netfs from internal buffer
-		load_ps2ftpd();   // loads ps2dftpd from internal buffer
 		have_NetModules = 1;
 	}
 	strcpy(mainMsg, netConfig);
@@ -1719,18 +1574,6 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
 		if (pathSep && (pathSep - path < 7) && pathSep[-1] == ':')
 			strcpy(fullpath + (pathSep - path), pathSep + 1);
 		goto ELFchecked;
-
-	} else if (!strncmp(path, "host:", 5)) {
-		initHOST();
-		party[0] = 0;
-		strcpy(fullpath, "host:");
-		if (path[5] == '/')
-			strcat(fullpath, path + 6);
-		else
-			strcat(fullpath, path + 5);
-		makeHostPath(fullpath, fullpath);
-		goto CheckELF_fullpath;
-
 	} else if (!strcasecmp(path, setting->Misc_OSDSYS)) {
 		char arg0[20], arg1[20], arg2[20], arg3[40];
 		char *args[4] = {arg0, arg1, arg2, arg3};
@@ -2020,10 +1863,8 @@ static void Reset()
 	have_usbd = 0;
 	have_usb_mass = 0;
 	have_ps2smap = 0;
-	have_ps2host = 0;
 	have_vmc_fs = 0;
 	have_smbman = 0;
-	have_ps2ftpd = 0;
 	have_ps2kbd = 0;
 	have_NetModules = 0;
 	have_HDD_modules = 0;
@@ -2124,16 +1965,11 @@ static void InitializeBootExecPath()
 //endfunc InitializeBootExecPath
 //---------------------------------------------------------------------------
 
-//#ifdef SMB
-//#include "SMB_test.c"
-//#endif
-
 //---------------------------------------------------------------------------
 enum BOOT_DEVICE {
 	BOOT_DEVICE_CDVD = 0,
 	BOOT_DEVICE_MC,
 	BOOT_DEVICE_MASS,
-	BOOT_DEVICE_HOST,
 	BOOT_DEVICE_HDD,
 
 	BOOT_DEV_UNKNOWN = -1
@@ -2204,10 +2040,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (!strncmp(LaunchElfDir, "host", 4)) {
-		boot = BOOT_DEVICE_HOST;
-	}
-
 	if (((p = strrchr(LaunchElfDir, '/')) == NULL) && ((p = strrchr(LaunchElfDir, '\\')) == NULL))
 		p = strrchr(LaunchElfDir, ':');
 	if (p != NULL)
@@ -2223,11 +2055,12 @@ int main(int argc, char *argv[])
 
 	CNF_error = loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
 
-	if (boot == BOOT_DEVICE_HOST) {
-		//If booted from the host: device, bring up the host device at this point.
-		getIpConfig();
-		initHOST();
-	}
+       // SMB2
+       getIpConfig();
+       load_ps2smap();
+       init_smb2(ip, netmask, gw);
+       sleep(5);
+
 	//Last chance to look at bootup screen, so allow braking here
 	/*
 	if(readpad() && (new_pad && PAD_UP))
