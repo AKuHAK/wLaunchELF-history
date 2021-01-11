@@ -11,7 +11,7 @@ EE_OBJS = main.o smb2.o pad.o config.o elf.o draw.o loader_elf.o filer.o \
 EE_INCS := -I$(PS2DEV)/gsKit/include -I$(PS2SDK)/ports/include
 
 EE_LDFLAGS := -L$(PS2DEV)/gsKit/lib -L$(PS2SDK)/ports/lib -s
-EE_LIBS = -lsmb2 -lnetman -ldebug \
+EE_LIBS = -lsmb2 -lps2ip -lnetman -ldebug \
 	-lgskit -ldmakit -ljpeg -lpad -lmc -lhdd -lkbd -lm \
 	-lcdvd -lfileXio -lpatches -lpoweroff -ldebug -lsior
 EE_CFLAGS := -mno-gpopt -G0

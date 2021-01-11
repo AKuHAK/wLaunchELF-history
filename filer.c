@@ -9,9 +9,11 @@ enum vfs_type {
 	FS_SMB2
 };
 
-struct vfs_fh {
+struct vfs_fh
+{
 	enum vfs_type type;
-	union {
+	union
+	{
 		int fd;
 		struct SMB2FH *fh;
 	};
@@ -56,9 +58,9 @@ enum {
 #define PM_RENAME 5       //PasteMode value for normal copies with new names
 #define MAX_RECURSE 16    //Maximum folder recursion for MC Backup/Restore
 
-int PasteProgress_f = 0;   //Flags progress report having been made in Pasting
-int PasteMode;             //Top-level PasteMode flag
-int PM_flag[MAX_RECURSE];  //PasteMode flag for each 'copy' recursion level
+int PasteProgress_f = 0;              //Flags progress report having been made in Pasting
+int PasteMode;                        //Top-level PasteMode flag
+int PM_flag[MAX_RECURSE];             //PasteMode flag for each 'copy' recursion level
 struct vfs_fh *PM_file[MAX_RECURSE];  //PasteMode attribute file descriptors
 
 char mountedParty[MOUNT_LIMIT][MAX_NAME];
@@ -1260,7 +1262,7 @@ int menu(const char *path, FILEINFO *file)
 	memset(enable, TRUE, NUM_MENU);  //Assume that all menu items are legal by default
 
 	//identify cases where write access is illegal, and disable menu items accordingly
-	if ((!strncmp(path, "cdfs", 4)))                           //Writing is always illegal for CDVD drive
+	if ((!strncmp(path, "cdfs", 4)))  //Writing is always illegal for CDVD drive
 		write_disabled = 1;
 
 	if (!strcmp(path, "hdd0:/") || path[0] == 0)  //No menu cmds in partition/device lists
@@ -1749,7 +1751,7 @@ int newdir(const char *path, const char *name)
 		mcSync(0, NULL, &ret);
 		if (ret == -4)
 			ret = -EEXIST;  //return fileXio error code for pre-existing folder
-	} else {  //For all other devices
+	} else {                //For all other devices
 		strcpy(dir, path);
 		strcat(dir, name);
 		genLimObjName(dir, 0);
@@ -2088,8 +2090,8 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
 				mcSetFileInfo(out[2] - '0', 0, &out[4], &file.stats, ret);
 				mcSync(0, NULL, &dummy);
 			} else {                                    //Handle folder copied to non-MC
-			        if (!strncmp(out, "smb2", 4)) {  //for files copied to smb2: we skip Chstat
-			        } else if (!strncmp(out, "mass", 4)) {  //for files copied to mass: we skip Chstat
+				if (!strncmp(out, "smb2", 4)) {         //for files copied to smb2: we skip Chstat
+				} else if (!strncmp(out, "mass", 4)) {  //for files copied to mass: we skip Chstat
 				} else {                                //for other devices we use fileXio_ stuff
 					memcpy(iox_stat.ctime, (void *)&file.stats._Create, 8);
 					memcpy(iox_stat.mtime, (void *)&file.stats._Modify, 8);
@@ -2181,8 +2183,8 @@ non_PSU_RESTORE_init:
 			psu_pad_size = 0x400 - (PSU_head.size & 0x3FF);
 		else
 			psu_pad_size = 0;
-		PSU_content++;  //Increase PSU content header count
-	} else {            //Any other PasteMode than PM_PSU_BACKUP needs a new output file
+		PSU_content++;                                        //Increase PSU content header count
+	} else {                                                  //Any other PasteMode than PM_PSU_BACKUP needs a new output file
 		genLimObjName(out, 0);                                //Limit dest file name
 		genRemove(out);                                       //Remove old file if present
 		out_fh = vfsOpen(out, O_WRONLY | O_TRUNC | O_CREAT);  //Create new file
@@ -2361,8 +2363,8 @@ non_PSU_RESTORE_init:
 			mcSync(0, NULL, &dummy);
 		}
 	} else {                                    //Handle file copied to non-MC
-	        if (!strncmp(out, "smb2", 4)) {  //for files copied to smb2: we skip Chstat
-	        } else if (!strncmp(out, "mass", 4)) {  //for files copied to mass: we skip Chstat
+		if (!strncmp(out, "smb2", 4)) {         //for files copied to smb2: we skip Chstat
+		} else if (!strncmp(out, "mass", 4)) {  //for files copied to mass: we skip Chstat
 		} else {                                //for other devices we use fileXio_ stuff
 			memcpy(iox_stat.ctime, (void *)&file.stats._Create, 8);
 			memcpy(iox_stat.mtime, (void *)&file.stats._Modify, 8);
@@ -4016,33 +4018,33 @@ struct vfs_fh *vfsOpen(char *path, int mode)
 
 int vfsLseek(struct vfs_fh *fh, int where, int how)
 {
-	switch(fh->type) {
-	case FS_PS2:
-		return lseek(fh->fd, where, how);
-	case FS_SMB2:
-		return SMB2lseek(fh->fh, where, how);
+	switch (fh->type) {
+		case FS_PS2:
+			return lseek(fh->fd, where, how);
+		case FS_SMB2:
+			return SMB2lseek(fh->fh, where, how);
 	}
 	return -1;
 }
 
 int vfsRead(struct vfs_fh *fh, void *buf, int size)
 {
-	switch(fh->type) {
-	case FS_PS2:
-		return read(fh->fd, buf, size);
-	case FS_SMB2:
-		return SMB2read(fh->fh, buf, size);
+	switch (fh->type) {
+		case FS_PS2:
+			return read(fh->fd, buf, size);
+		case FS_SMB2:
+			return SMB2read(fh->fh, buf, size);
 	}
 	return -1;
 }
 
 int vfsWrite(struct vfs_fh *fh, void *buf, int size)
 {
-	switch(fh->type) {
-	case FS_PS2:
-		return write(fh->fd, buf, size);
-	case FS_SMB2:
-		return SMB2write(fh->fh, buf, size);
+	switch (fh->type) {
+		case FS_PS2:
+			return write(fh->fd, buf, size);
+		case FS_SMB2:
+			return SMB2write(fh->fh, buf, size);
 	}
 	return -1;
 }
@@ -4055,14 +4057,14 @@ int vfsClose(struct vfs_fh *fh)
 		return 0;
 	}
 
-	switch(fh->type) {
-	case FS_PS2:
-		rc = close(fh->fd);
-		break;
-	case FS_SMB2:
-		rc = SMB2close(fh->fh);
-		free(fh->fh);
-		break;
+	switch (fh->type) {
+		case FS_PS2:
+			rc = close(fh->fd);
+			break;
+		case FS_SMB2:
+			rc = SMB2close(fh->fh);
+			free(fh->fh);
+			break;
 	}
 	free(fh);
 	return rc;
