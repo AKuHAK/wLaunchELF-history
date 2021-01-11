@@ -13,7 +13,7 @@ jobs:
     steps:
     - name: Install dependencies
       run: |
-        apk add build-base git zip
+        apk add build-base git zip ccze
 
     - uses: actions/checkout@v2
     - run: |
@@ -28,7 +28,7 @@ jobs:
       run: |
         git clone https://github.com/sahlberg/libsmb2
         cd libsmb2/lib && make -f Makefile.PS2_EE clean
-        make -f Makefile.PS2_EE install --color=auto
+        make -f Makefile.PS2_EE install | ccze -A
 
     - name: Compile wLaunchELF
       run: |
