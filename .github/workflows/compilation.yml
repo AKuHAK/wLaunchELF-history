@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: ps2dev/ps2dev:v1.2.0
+    container: ps2dev/ps2dev:latest
     steps:
     - name: Install dependencies
       run: |
@@ -28,7 +28,7 @@ jobs:
       run: |
         git clone https://github.com/sahlberg/libsmb2
         cd libsmb2/lib && make -f Makefile.PS2_EE clean
-        make -f Makefile.PS2_EE install
+        make -f Makefile.PS2_EE install --color=auto
 
     - name: Compile wLaunchELF
       run: |
