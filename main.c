@@ -659,9 +659,9 @@ static void load_ps2smap(void)
 	load_ps2dev9();
 	if (!have_ps2smap) {
 		SifExecModuleBuffer(NETMAN_irx, size_NETMAN_irx,
-		                    0, NULL, NULL);
+				    0, NULL, NULL);
 		SifExecModuleBuffer(SMAP_irx, size_SMAP_irx,
-		                    0, NULL, NULL);
+				    0, NULL, NULL);
 		have_ps2smap = 1;
 	}
 }
@@ -1113,11 +1113,11 @@ static void loadNetModules(void)
 	if (!have_NetModules) {
 		drawMsg(LNG(Loading_NetFS_and_FTP_Server_Modules));
 
-		getIpConfig();  //RA NB: I always get that info, early in init
+		getIpConfig();    //RA NB: I always get that info, early in init
 		load_ps2smap();
 		// But sometimes it is useful to do it again (HDD)
 		// Also, my module checking makes some other tests redundant
-		load_ps2ftpd();  // loads ps2dftpd from internal buffer
+		load_ps2ftpd();   // loads ps2dftpd from internal buffer
 		have_NetModules = 1;
 	}
 	strcpy(mainMsg, netConfig);
@@ -2084,11 +2084,11 @@ int main(int argc, char *argv[])
 
 	CNF_error = loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
 
-	// SMB2
-	getIpConfig();
-	load_ps2smap();
-	init_smb2(ip, netmask, gw);
-	sleep(5);
+       // SMB2
+       getIpConfig();
+       load_ps2smap();
+       init_smb2(ip, netmask, gw);
+       sleep(5);
 
 	//Last chance to look at bootup screen, so allow braking here
 	/*
