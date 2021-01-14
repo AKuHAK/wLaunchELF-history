@@ -9,12 +9,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: ps2dev/ps2dev:v1.2.0
+    container: ps2dev/ps2dev:experimental
     steps:
     - name: Install dependencies
       run: |
         apk add build-base git zip
         apk add --no-cache -X http://dl-cdn.alpinelinux.org/alpine/edge/testing ccze
+        history -c
 
     - uses: actions/checkout@v2
     - run: |
@@ -29,7 +30,7 @@ jobs:
       run: |
         git clone https://github.com/sahlberg/libsmb2
         cd libsmb2/lib && make -f Makefile.PS2_EE clean
-        make -f Makefile.PS2_EE install | ccze
+        make -f Makefile.PS2_EE install
 
     - name: Compile wLaunchELF
       run: |
