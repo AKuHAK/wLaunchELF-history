@@ -2,6 +2,7 @@
 
 SMB = 0
 #set SMB to 1 to build uLe with smb support
+DEBUG = 1
 
 EE_BIN = BOOT-UNC.ELF
 EE_BIN_PKD = BOOT.ELF
@@ -24,6 +25,9 @@ EE_CFLAGS := -mno-gpopt -G0
 
 ifeq ($(SMB),1)
 	EE_CFLAGS += -DSMB
+endif
+ifeq ($(SMB),1)
+	EE_CFLAGS += -DDEBUG
 endif
 
 BIN2S = $(PS2SDK)/bin/bin2s
