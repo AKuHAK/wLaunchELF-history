@@ -26,7 +26,7 @@ EE_CFLAGS := -mno-gpopt -G0
 ifeq ($(SMB),1)
 	EE_CFLAGS += -DSMB
 endif
-ifeq ($(SMB),1)
+ifeq ($(DEBUG),1)
 	EE_CFLAGS += -DDEBUG
 endif
 
