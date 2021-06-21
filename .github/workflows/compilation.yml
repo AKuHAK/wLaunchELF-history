@@ -8,25 +8,34 @@ on:
 
 jobs:
   build:
+    strategy:
+      fail-fast: false
+      matrix:
+        docker: ['ps2dev', 'fjtrujy']
     runs-on: ubuntu-latest
-    container: ps2dev/ps2dev:latest
+    container: ${{ matrix.docker }}/ps2dev:latest
     steps:
     - name: Install dependencies
       run: |
-        apk add build-base git zip
+        apk add build-base git zip gawk
+        wget -O ${PS2SDK}/samples/Makefile.iopglobal https://raw.githubusercontent.com/ps2dev/ps2sdk/master/samples/Makefile.iopglobal_sample
 
     - uses: actions/checkout@v2
-    - run: |
-        git fetch --prune --unshallow
+    - run: git fetch --prune --unshallow
 
+    - name: Set up environment
+      if: matrix.docker == 'fjtrujy'
+      run: |
+        echo "IOP_TOOL_PREFIX=mipsel-ps2-irx-" >> $GITHUB_ENV
+        echo "IOP_PREFIX=mipsel-ps2-irx-" >> $GITHUB_ENV
+ 
     - name: Install ps2eth
       run: |
         git clone https://github.com/ps2dev/ps2eth.git
         cd ps2eth && make clean all install
 
     - name: Compile wLaunchELF
-      run: |
-        make
+      run: make
     
     - name: Get short SHA
       id: slug
@@ -36,7 +45,7 @@ jobs:
       if: ${{ success() }}
       uses: actions/upload-artifact@v2
       with:
-        name: wLaunchELF-${{ steps.slug.outputs.sha8 }}
+        name: wLaunchELF-${{ steps.slug.outputs.sha8 }}-${{ matrix.docker }}
         path: BOOT.ELF
 
     - name: Create release
