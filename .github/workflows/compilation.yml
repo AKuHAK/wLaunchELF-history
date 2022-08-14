@@ -13,12 +13,19 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          apk add build-base git zip
+          apk add build-base git zip bash
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git fetch --prune --unshallow
+
+      - name: Revert sdk
+        run: |
+          git clone https://github.com/ps2dev/ps2sdk
+          cd ps2sdk
+          git reset --hard eae0188fc06a5c41065257e9136c40cf131bdd77
+          make release
 
       - name: Compile wLaunchELF
         run: |
@@ -31,7 +38,7 @@ jobs:
 
       - name: Upload artifacts
         if: ${{ success() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: wLaunchELF-${{ steps.slug.outputs.sha8 }}
           path: BOOT.ELF
