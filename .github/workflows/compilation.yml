@@ -31,7 +31,7 @@ jobs:
         run: |
           git clone https://github.com/ps2dev/ps2sdk-ports
           cd ps2sdk
-          git reset --hard afb05b4860566cb6e53c1482ba20c60cf6eb042c
+          git reset --hard a4f2635234f4227b2c0ac49b10018037abf6e561
           make
 
       - name: Compile old wLaunchELF
