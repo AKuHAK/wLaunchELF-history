@@ -27,9 +27,9 @@ jobs:
           git reset --hard 01f3db7f01f50f656387b1a5de59b0e9eb88a69d
           make release
 
-      - name: Compile wLaunchELF
+      - name: Compile old wLaunchELF
         run: |
-          git reset --hard e4fa0ec7a86e63d0469593f76a48a49462121ad6
+          git reset --hard 74675a064c9727b3f182f99b0c58756ca400c15d
           make
           git ls-files -i --exclude-standard -c
 
