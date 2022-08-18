@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          apk add build-base git zip bash
+          apk add build-base git zip bash cmake pkgconfig texinfo
 
       - uses: actions/checkout@v3
       - run: |
@@ -24,12 +24,19 @@ jobs:
         run: |
           git clone https://github.com/ps2dev/ps2sdk
           cd ps2sdk
-          git reset --hard 01f3db7f01f50f656387b1a5de59b0e9eb88a69d
+          git reset --hard eb9a70ac898fce88b564b3b79c6c56ecc5b2a58f
           make release
+
+      - name: Revert ports
+        run: |
+          git clone https://github.com/ps2dev/ps2sdk-ports
+          cd ps2sdk
+          git reset --hard afb05b4860566cb6e53c1482ba20c60cf6eb042c
+          make
 
       - name: Compile old wLaunchELF
         run: |
-          git reset --hard 74675a064c9727b3f182f99b0c58756ca400c15d
+          git reset --hard 4f9831d3a36ccd6fc07155749c04c85ac0d1fc67
           make
           git ls-files -i --exclude-standard -c
 
