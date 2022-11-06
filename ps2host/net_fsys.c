@@ -17,6 +17,7 @@
 
 #include "net_fio.h"
 
+#define IOMANX_OLD_NAME_ADDDELDRV 1
 #define IOCTL_RENAME 0xFEEDC0DE  // dlanor: Used for the Ioctl request code => Rename
 
 #ifdef DEBUG

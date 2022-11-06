@@ -3,6 +3,7 @@
 
 //  Driver fonctions
 
+#define IOMANX_OLD_NAME_ADDDELDRV 1
 #define MODNAME "vmc_fs"
 IRX_ID(MODNAME, 1, 2);
 
